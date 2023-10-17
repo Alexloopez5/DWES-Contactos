@@ -21,6 +21,17 @@ class ContactoRepository extends ServiceEntityRepository
         parent::__construct($registry, Contacto::class);
     }
 
+    public function findByName($text): array
+    {
+
+    $entityManager = $this->getEntityManager();
+    $query = $entityManager->createQuery(
+        'SELECT c FROM App\Entity\Contacto c WHERE c.nombre LIKE :text'
+    )->setParameter('text', '%' . $text . '%');
+
+    return $query->execute();        
+    }
+
 //    /**
 //     * @return Contacto[] Returns an array of Contacto objects
 //     */
