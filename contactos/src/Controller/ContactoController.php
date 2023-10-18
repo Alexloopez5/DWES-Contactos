@@ -5,8 +5,12 @@ namespace App\Controller;
 use App\Entity\Contacto;
 use App\Entity\Provincia;
 use Doctrine\Persistence\ManagerRegistry;
-use SebastianBergmann\CodeCoverage\Report\Xml\Report;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -39,6 +43,35 @@ class ContactoController extends AbstractController
         } catch (\Exception $e){
             return new Response("Error insertando objetos " . $e->getMessage());
         }
+    }
+
+    #[Route('/contacto/nuevo', name: 'nuevo_contacto')]
+    public function nuevo(ManagerRegistry $doctrine, Request $request) {
+        $contacto = new Contacto();
+
+        $formulario = $this->createFormBuilder($contacto)
+            ->add('nombre',TextType::class,array('label' => 'Nombre  '))
+            ->add('telefono', TextType::class, array('label' => 'Telefono  '))
+            ->add('email', EmailType::class, array('label' => 'Correo electrónico  '))
+            ->add('provincia', EntityType::class, array(
+                'label' => 'Provincia  ',
+                'class' => Provincia::class,
+                'choice_label' => 'nombre'))
+            ->add('save', SubmitType::class, array('label' => "Enviar"))
+            ->getForm();
+            $formulario->handleRequest($request);
+
+            if($formulario->isSubmitted() && $formulario->isValid()){
+                $contacto = $formulario->getData();
+                $entityManager = $doctrine->getManager();
+                $entityManager->persist($contacto);
+                $entityManager->flush();
+                return $this->render("ficha_contacto.html.twig", ["contacto"=>$contacto ,"codigo" => $contacto->getId()]);
+            }
+        
+            return $this->render('nuevo.html.twig', array(
+                'formulario' => $formulario->createView()
+            ));
     }
     
     #[Route('/contacto/update/{id}/{nombre}', name: 'modificar_contacto')]
