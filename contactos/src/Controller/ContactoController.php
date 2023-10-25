@@ -13,6 +13,7 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 class ContactoController extends AbstractController
@@ -33,6 +34,7 @@ class ContactoController extends AbstractController
         return $this->render("lista_contactos.html.twig", [
             'contactos' => $contactos
         ]);
+        
     }
 
     #[Route('/contacto/insertar', name: 'insertar_contacto')]
@@ -46,7 +48,6 @@ class ContactoController extends AbstractController
             $contacto->setEmail($c["email"]);
             $entityManager->persist($contacto);
         }
-
         try
         {
             $entityManager->flush();
@@ -77,7 +78,7 @@ class ContactoController extends AbstractController
     }
 
     #[Route('/contacto/editar/{codigo}', name: 'editar_contacto')]
-    public function editar(ManagerRegistry $doctrine, Request $request, $codigo) {
+    public function editar(ManagerRegistry $doctrine, Request $request,$codigo) {
         $repositorio = $doctrine->getRepository(Contacto::class);
         $contacto = $repositorio->find($codigo);
         $user = $this->getUser();
@@ -130,15 +131,18 @@ class ContactoController extends AbstractController
         $contacto = $repositorio->find($id);
 
         if($contacto){
+            //Si existe el contacto
             try
             {
+                //Lo borro
                 $entityManager->remove($contacto);
                 $entityManager->flush();
-                return new Response("Contacto eliminado");
+                return $this->redirectToRoute("app_contacto");
             }catch(\Exception $e){
                 return new Response("Error eliminando objeto ". $e->getMessage());
             }
         }else{
+            //Si no me redirecciona a los contactos que hay
             return $this->render("ficha_contacto.html.twig", ["contacto" => null]);
         }
     }
@@ -186,18 +190,21 @@ class ContactoController extends AbstractController
     }
 
     #[Route('/contacto/{codigo}', name: 'ficha_contacto')]
-    public function ficha(ManagerRegistry $doctrine, $codigo): Response
+    public function ficha(ManagerRegistry $doctrine, SessionInterface $session,Request $request,$codigo): Response
     {
         $user = $this->getUser();
-        if($user){
+        if($user){ //Compruebo que el usuario haya iniciado sesion
             $repositorio = $doctrine->getRepository(Contacto::class);
             $contacto = $repositorio->find($codigo);    
             return $this->render("ficha_contacto.html.twig", [
                 'contacto' => $contacto, "codigo" => $codigo
             ]);
         }else{
+            //Me guardo la ruta para cuando haga log in me redireccione a esta página
+            $currentRoute = $request->getUri();
+            $currentRoute = parse_url($currentRoute);
+            $session->set('url', $currentRoute["path"]);
             return $this->redirectToRoute("app_login");
-            return $this->redirectToRoute("ficha_contacto");
         }
         
     }

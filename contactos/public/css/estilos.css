@@ -7,3 +7,9 @@ h1{
 form{
     padding: 10px;
 }
+#bt{
+    background-color: aliceblue;
+    padding: 5px;
+    margin: 3px;
+    box-shadow: 1px 1px 1px 1px;
+}
