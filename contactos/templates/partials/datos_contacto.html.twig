@@ -5,4 +5,7 @@
         <li><strong>Provincia</strong>: {{ contacto.provincia.nombre }}</li>
     {% endif %}
     <li><strong>E-mail</strong>: {{ contacto.email }}</li>
+    {% if contacto.file %}
+        <li><img src="{{ asset('images/index/gallery/' ~ contacto.file) }}"/></li>
+    {% endif %}
 </ul>
